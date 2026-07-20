@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SyncDashboardView: View {
     @StateObject private var viewModel: SyncViewModel
+    @State private var isSettingsPresented = false
 
     init(viewModel: SyncViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -10,39 +11,23 @@ struct SyncDashboardView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Verbindung") {
-                    TextField("WebDAV URL", text: $viewModel.connection.baseURLString)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                    TextField("Benutzername", text: $viewModel.connection.username)
-                    SecureField("Passwort", text: $viewModel.connection.password)
-                    TextField("Remote-Pfad", text: $viewModel.connection.remotePath)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                }
-
                 Section("Aktionen") {
-                    Button("Verbindung testen") {
-                        Task { await viewModel.testConnection() }
-                    }
-                    .disabled(viewModel.isBusy)
-
-                    Button("Remote laden") {
+                    Button("NAS-Dateien anzeigen") {
                         Task { await viewModel.loadRemoteFiles() }
                     }
                     .disabled(viewModel.isBusy)
 
-                    Button("Lokal laden") {
+                    Button("iPhone/iPad-Dateien anzeigen") {
                         Task { await viewModel.loadLocalFiles() }
                     }
                     .disabled(viewModel.isBusy)
 
-                    Button("Alle herunterladen") {
+                    Button("Auf iPhone/iPad laden") {
                         Task { await viewModel.downloadAllRemoteFiles() }
                     }
                     .disabled(viewModel.isBusy || viewModel.remoteFiles.isEmpty)
 
-                    Button("Alle hochladen") {
+                    Button("Auf NAS laden") {
                         Task { await viewModel.uploadAllLocalFiles() }
                     }
                     .disabled(viewModel.isBusy)
@@ -55,19 +40,35 @@ struct SyncDashboardView: View {
                     }
                 }
 
-                Section("Remote PDFs") {
+                Section("NAS PDFs") {
                     ForEach(viewModel.remoteFiles) { file in
                         Text(file.filename)
                     }
                 }
 
-                Section("Lokale PDFs") {
+                Section("iPhone/iPad PDFs") {
                     ForEach(viewModel.localFiles) { file in
                         Text(file.filename)
                     }
                 }
             }
             .navigationTitle("LocalSync")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isSettingsPresented = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
+            .sheet(isPresented: $isSettingsPresented) {
+                SettingsView(
+                    connection: $viewModel.connection,
+                    isBusy: viewModel.isBusy,
+                    onTestConnection: { Task { await viewModel.testConnection() } }
+                )
+            }
         }
     }
 }
