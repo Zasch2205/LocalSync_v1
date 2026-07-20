@@ -77,6 +77,10 @@ final class SyncViewModel: ObservableObject {
         }
     }
 
+    func localFileURL(filename: String) -> URL {
+        syncService.localFileURL(filename: filename)
+    }
+
     private func runTask(_ operation: () async throws -> Void) async {
         isBusy = true
         defer { isBusy = false }

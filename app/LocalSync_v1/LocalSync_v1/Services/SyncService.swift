@@ -30,4 +30,8 @@ final class SyncService {
         let localURL = localFileStore.localURL(filename: localFile.filename)
         try await nasClient.uploadFile(connection: connection, localURL: localURL, remoteFilename: localFile.filename)
     }
+
+    func localFileURL(filename: String) -> URL {
+        localFileStore.localURL(filename: filename)
+    }
 }
