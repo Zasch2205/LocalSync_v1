@@ -10,15 +10,43 @@ final class SyncViewModel: ObservableObject {
     @Published var lastMessage = "Bereit"
 
     private let syncService: SyncService
+    private let configStore: ConnectionConfigStore
+    private let passwordStore: KeychainPasswordStore
+    private var cancellables: Set<AnyCancellable> = []
 
-    init(syncService: SyncService) {
+    init(
+        syncService: SyncService,
+        configStore: ConnectionConfigStore,
+        passwordStore: KeychainPasswordStore
+    ) {
         self.syncService = syncService
+        self.configStore = configStore
+        self.passwordStore = passwordStore
+
+        var saved = configStore.load()
+        saved.password = passwordStore.loadPassword()
+        connection = saved
+
+        $connection
+            .dropFirst()
+            .sink { [weak self] newValue in
+                self?.configStore.save(newValue)
+                self?.passwordStore.savePassword(newValue.password)
+            }
+            .store(in: &cancellables)
     }
 
     func loadRemoteFiles() async {
         await runTask {
             remoteFiles = try await syncService.fetchRemotePDFs(connection: connection)
             lastMessage = "Remote-Dateien geladen: \(remoteFiles.count)"
+        }
+    }
+
+    func testConnection() async {
+        await runTask {
+            try await syncService.testConnection(connection: connection)
+            lastMessage = "Verbindung erfolgreich"
         }
     }
 

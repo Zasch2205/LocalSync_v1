@@ -1,6 +1,7 @@
 import Foundation
 
 protocol NASClient {
+    func testConnection(connection: ConnectionConfig) async throws
     func listPDFs(connection: ConnectionConfig) async throws -> [SyncFile]
     func downloadFile(connection: ConnectionConfig, remoteFilename: String, to localURL: URL) async throws
     func uploadFile(connection: ConnectionConfig, localURL: URL, remoteFilename: String) async throws

@@ -7,6 +7,10 @@ final class WebDAVNASClient: NASClient {
         self.session = session
     }
 
+    func testConnection(connection: ConnectionConfig) async throws {
+        _ = try await listPDFs(connection: connection)
+    }
+
     func listPDFs(connection: ConnectionConfig) async throws -> [SyncFile] {
         let directoryURL = try buildRemoteDirectoryURL(connection: connection)
         var request = URLRequest(url: directoryURL)
@@ -158,7 +162,7 @@ private final class WebDAVPropfindParser: NSObject, XMLParserDelegate {
     }
 
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String: String] = [:]) {
-        currentElementName = elementName.lowercased()
+        currentElementName = localName(from: elementName)
         currentText = ""
 
         if currentElementName == "response" {
@@ -175,7 +179,7 @@ private final class WebDAVPropfindParser: NSObject, XMLParserDelegate {
     }
 
     func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
-        let normalized = elementName.lowercased()
+        let normalized = localName(from: elementName)
         let text = currentText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if normalized == "href" {
@@ -191,5 +195,13 @@ private final class WebDAVPropfindParser: NSObject, XMLParserDelegate {
         }
 
         currentText = ""
+    }
+
+    private func localName(from elementName: String) -> String {
+        elementName
+            .split(separator: ":")
+            .last
+            .map(String.init)?
+            .lowercased() ?? elementName.lowercased()
     }
 }

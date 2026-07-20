@@ -5,6 +5,12 @@ enum AppContainer {
         let localStore = LocalFileStore()
         let nasClient = WebDAVNASClient()
         let syncService = SyncService(nasClient: nasClient, localFileStore: localStore)
-        return SyncViewModel(syncService: syncService)
+        let configStore = ConnectionConfigStore()
+        let passwordStore = KeychainPasswordStore()
+        return SyncViewModel(
+            syncService: syncService,
+            configStore: configStore,
+            passwordStore: passwordStore
+        )
     }
 }

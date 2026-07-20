@@ -22,6 +22,11 @@ struct SyncDashboardView: View {
                 }
 
                 Section("Aktionen") {
+                    Button("Verbindung testen") {
+                        Task { await viewModel.testConnection() }
+                    }
+                    .disabled(viewModel.isBusy)
+
                     Button("Remote laden") {
                         Task { await viewModel.loadRemoteFiles() }
                     }

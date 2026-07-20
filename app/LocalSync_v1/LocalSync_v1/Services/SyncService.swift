@@ -9,6 +9,10 @@ final class SyncService {
         self.localFileStore = localFileStore
     }
 
+    func testConnection(connection: ConnectionConfig) async throws {
+        try await nasClient.testConnection(connection: connection)
+    }
+
     func fetchRemotePDFs(connection: ConnectionConfig) async throws -> [SyncFile] {
         try await nasClient.listPDFs(connection: connection)
     }

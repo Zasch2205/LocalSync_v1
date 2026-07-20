@@ -1,6 +1,9 @@
 import Foundation
 
 final class MockNASClient: NASClient {
+    func testConnection(connection: ConnectionConfig) async throws {
+    }
+
     func listPDFs(connection: ConnectionConfig) async throws -> [SyncFile] {
         [
             SyncFile(filename: "Angebot.pdf", sizeBytes: 153_600, modifiedAt: .now.addingTimeInterval(-86_400), location: .remote),
