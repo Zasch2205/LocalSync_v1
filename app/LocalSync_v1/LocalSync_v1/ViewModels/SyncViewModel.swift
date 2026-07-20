@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 @MainActor
 final class SyncViewModel: ObservableObject {
@@ -16,7 +17,7 @@ final class SyncViewModel: ObservableObject {
 
     func loadRemoteFiles() async {
         await runTask {
-            remoteFiles = try await syncService.fetchRemotePDFs(remotePath: connection.remotePath)
+            remoteFiles = try await syncService.fetchRemotePDFs(connection: connection)
             lastMessage = "Remote-Dateien geladen: \(remoteFiles.count)"
         }
     }
@@ -31,7 +32,7 @@ final class SyncViewModel: ObservableObject {
     func downloadAllRemoteFiles() async {
         await runTask {
             for file in remoteFiles {
-                try await syncService.download(remoteFile: file, remotePath: connection.remotePath)
+                try await syncService.download(remoteFile: file, connection: connection)
             }
             localFiles = try syncService.listLocalPDFs()
             lastMessage = "Download abgeschlossen: \(remoteFiles.count) Dateien"
@@ -42,7 +43,7 @@ final class SyncViewModel: ObservableObject {
         await runTask {
             let files = try syncService.listLocalPDFs()
             for file in files {
-                try await syncService.upload(localFile: file, remotePath: connection.remotePath)
+                try await syncService.upload(localFile: file, connection: connection)
             }
             lastMessage = "Upload abgeschlossen: \(files.count) Dateien"
         }
@@ -59,4 +60,3 @@ final class SyncViewModel: ObservableObject {
         }
     }
 }
-

@@ -12,8 +12,13 @@ struct SyncDashboardView: View {
             List {
                 Section("Verbindung") {
                     TextField("WebDAV URL", text: $viewModel.connection.baseURLString)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                     TextField("Benutzername", text: $viewModel.connection.username)
+                    SecureField("Passwort", text: $viewModel.connection.password)
                     TextField("Remote-Pfad", text: $viewModel.connection.remotePath)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                 }
 
                 Section("Aktionen") {
@@ -61,4 +66,3 @@ struct SyncDashboardView: View {
         }
     }
 }
-

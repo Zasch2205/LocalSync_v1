@@ -9,24 +9,21 @@ final class SyncService {
         self.localFileStore = localFileStore
     }
 
-    func fetchRemotePDFs(remotePath: String) async throws -> [SyncFile] {
-        try await nasClient.listPDFs(path: remotePath)
+    func fetchRemotePDFs(connection: ConnectionConfig) async throws -> [SyncFile] {
+        try await nasClient.listPDFs(connection: connection)
     }
 
     func listLocalPDFs() throws -> [SyncFile] {
         try localFileStore.listLocalPDFs()
     }
 
-    func download(remoteFile: SyncFile, remotePath: String) async throws {
-        let fromPath = remotePath.appending("/\(remoteFile.filename)")
+    func download(remoteFile: SyncFile, connection: ConnectionConfig) async throws {
         let targetURL = localFileStore.localURL(filename: remoteFile.filename)
-        try await nasClient.downloadFile(remotePath: fromPath, to: targetURL)
+        try await nasClient.downloadFile(connection: connection, remoteFilename: remoteFile.filename, to: targetURL)
     }
 
-    func upload(localFile: SyncFile, remotePath: String) async throws {
+    func upload(localFile: SyncFile, connection: ConnectionConfig) async throws {
         let localURL = localFileStore.localURL(filename: localFile.filename)
-        let destination = remotePath.appending("/\(localFile.filename)")
-        try await nasClient.uploadFile(localURL: localURL, remotePath: destination)
+        try await nasClient.uploadFile(connection: connection, localURL: localURL, remoteFilename: localFile.filename)
     }
 }
-
