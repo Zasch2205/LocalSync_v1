@@ -77,6 +77,25 @@ final class SyncViewModel: ObservableObject {
         }
     }
 
+    func uploadSingleLocalFile(_ localFile: SyncFile) async {
+        await runTask {
+            let uploadedName = try await syncService.uploadWithIncrementedNameIfNeeded(localFile: localFile, connection: connection)
+            if uploadedName == localFile.filename {
+                lastMessage = "Datei hochgeladen: \(uploadedName)"
+            } else {
+                lastMessage = "Datei hochgeladen als: \(uploadedName)"
+            }
+        }
+    }
+
+    func deleteSingleLocalFile(_ localFile: SyncFile) async {
+        await runTask {
+            try syncService.deleteLocalFile(filename: localFile.filename)
+            localFiles = try syncService.listLocalPDFs()
+            lastMessage = "Lokal gelöscht: \(localFile.filename)"
+        }
+    }
+
     func localFileURL(filename: String) -> URL {
         syncService.localFileURL(filename: filename)
     }

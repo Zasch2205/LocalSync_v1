@@ -11,6 +11,29 @@ final class WebDAVNASClient: NASClient {
         _ = try await listPDFs(connection: connection)
     }
 
+    func fileExists(connection: ConnectionConfig, remoteFilename: String) async throws -> Bool {
+        let fileURL = try buildRemoteFileURL(connection: connection, filename: remoteFilename)
+        var request = URLRequest(url: fileURL)
+        request.httpMethod = "HEAD"
+        applyBasicAuth(to: &request, connection: connection)
+
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        switch http.statusCode {
+        case 200...299:
+            return true
+        case 404:
+            return false
+        case 401:
+            throw NASClientError.unauthorized
+        default:
+            throw NASClientError.serverError(http.statusCode)
+        }
+    }
+
     func listPDFs(connection: ConnectionConfig) async throws -> [SyncFile] {
         let directoryURL = try buildRemoteDirectoryURL(connection: connection)
         var request = URLRequest(url: directoryURL)

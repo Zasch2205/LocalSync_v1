@@ -31,7 +31,37 @@ final class SyncService {
         try await nasClient.uploadFile(connection: connection, localURL: localURL, remoteFilename: localFile.filename)
     }
 
+    func uploadWithIncrementedNameIfNeeded(localFile: SyncFile, connection: ConnectionConfig) async throws -> String {
+        let localURL = localFileStore.localURL(filename: localFile.filename)
+        let resolvedName = try await resolveAvailableRemoteFilename(baseFilename: localFile.filename, connection: connection)
+        try await nasClient.uploadFile(connection: connection, localURL: localURL, remoteFilename: resolvedName)
+        return resolvedName
+    }
+
     func localFileURL(filename: String) -> URL {
         localFileStore.localURL(filename: filename)
+    }
+
+    func deleteLocalFile(filename: String) throws {
+        try localFileStore.deleteLocalFile(filename: filename)
+    }
+
+    private func resolveAvailableRemoteFilename(baseFilename: String, connection: ConnectionConfig) async throws -> String {
+        let base = (baseFilename as NSString).deletingPathExtension
+        let ext = (baseFilename as NSString).pathExtension
+
+        if try await !nasClient.fileExists(connection: connection, remoteFilename: baseFilename) {
+            return baseFilename
+        }
+
+        var index = 1
+        while true {
+            let candidateBase = "\(base)_\(index)"
+            let candidate = ext.isEmpty ? candidateBase : "\(candidateBase).\(ext)"
+            if try await !nasClient.fileExists(connection: connection, remoteFilename: candidate) {
+                return candidate
+            }
+            index += 1
+        }
     }
 }

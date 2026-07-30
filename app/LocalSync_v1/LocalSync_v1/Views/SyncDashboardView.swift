@@ -161,6 +161,24 @@ struct SyncDashboardView: View {
                                     Image(systemName: "square.and.arrow.up")
                                         .foregroundStyle(Color(red: 0.84, green: 0.91, blue: 1.0))
                                 }
+
+                                Button {
+                                    Task { await viewModel.uploadSingleLocalFile(file) }
+                                } label: {
+                                    Image(systemName: "arrow.up.doc.fill")
+                                        .foregroundStyle(Color(red: 0.84, green: 0.91, blue: 1.0))
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(viewModel.isBusy || hasMissingSettings)
+
+                                Button {
+                                    Task { await viewModel.deleteSingleLocalFile(file) }
+                                } label: {
+                                    Image(systemName: "trash.fill")
+                                        .foregroundStyle(Color(red: 1.0, green: 0.63, blue: 0.63))
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(viewModel.isBusy)
                             }
                         } else {
                             Text(file.filename)

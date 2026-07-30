@@ -31,5 +31,12 @@ final class LocalFileStore {
     func localURL(filename: String) -> URL {
         documentsDirectory.appendingPathComponent(filename)
     }
-}
 
+    func deleteLocalFile(filename: String) throws {
+        let url = localURL(filename: filename)
+        guard fileManager.fileExists(atPath: url.path) else {
+            return
+        }
+        try fileManager.removeItem(at: url)
+    }
+}
