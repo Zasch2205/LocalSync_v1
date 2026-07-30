@@ -47,6 +47,7 @@ struct SyncDashboardView: View {
             .sheet(isPresented: $isSettingsPresented) {
                 SettingsView(
                     connection: $viewModel.connection,
+                    statusMessage: viewModel.lastMessage,
                     isBusy: viewModel.isBusy,
                     onTestConnection: { Task { await viewModel.testConnection() } }
                 )
@@ -66,6 +67,10 @@ struct SyncDashboardView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Aktionen")
                 .font(.headline)
+
+            actionButton("Einstellungen öffnen", systemImage: "gearshape.fill") {
+                isSettingsPresented = true
+            }
 
             actionButton("NAS-Dateien anzeigen", systemImage: "externaldrive.fill.badge.icloud") {
                 Task { await viewModel.loadRemoteFiles() }
@@ -124,14 +129,21 @@ struct SyncDashboardView: View {
                             .foregroundStyle(Color(red: 0.74, green: 0.86, blue: 1.0))
 
                         if title == "iPhone/iPad PDFs" {
-                            Button {
-                                selectedLocalPDFURL = viewModel.localFileURL(filename: file.filename)
-                            } label: {
-                                Text(file.filename)
-                                    .lineLimit(1)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            HStack(spacing: 8) {
+                                Button {
+                                    selectedLocalPDFURL = viewModel.localFileURL(filename: file.filename)
+                                } label: {
+                                    Text(file.filename)
+                                        .lineLimit(1)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                .buttonStyle(.plain)
+
+                                ShareLink(item: viewModel.localFileURL(filename: file.filename)) {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .foregroundStyle(Color(red: 0.84, green: 0.91, blue: 1.0))
+                                }
                             }
-                            .buttonStyle(.plain)
                         } else {
                             Text(file.filename)
                                 .lineLimit(1)

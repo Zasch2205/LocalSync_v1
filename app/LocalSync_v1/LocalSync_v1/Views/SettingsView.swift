@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var connection: ConnectionConfig
+    let statusMessage: String
     let isBusy: Bool
     let onTestConnection: () -> Void
 
@@ -88,9 +89,24 @@ struct SettingsView: View {
                 ProgressView()
                     .tint(.white)
             }
+
+            Text(statusMessage)
+                .font(.subheadline)
+                .foregroundStyle(statusColor)
         }
         .padding(14)
         .cardStyle()
+    }
+
+    private var statusColor: Color {
+        let message = statusMessage.lowercased()
+        if message.contains("fehler") {
+            return Color(red: 1.0, green: 0.55, blue: 0.55)
+        }
+        if message.contains("erfolgreich") {
+            return Color(red: 0.58, green: 0.95, blue: 0.68)
+        }
+        return Color(red: 0.84, green: 0.91, blue: 1.0)
     }
 }
 
