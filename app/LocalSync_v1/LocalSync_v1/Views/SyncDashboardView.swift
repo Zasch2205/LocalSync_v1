@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SyncDashboardView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @StateObject private var viewModel: SyncViewModel
     @State private var isSettingsPresented = false
     @State private var selectedLocalPDFURL: URL?
@@ -26,6 +27,9 @@ struct SyncDashboardView: View {
                 ScrollView {
                     VStack(spacing: 14) {
                         AppLogoView()
+                        if horizontalSizeClass == .regular {
+                            settingsHeaderButton
+                        }
                         actionCard
                         statusCard
                         fileListCard(title: "NAS PDFs", files: viewModel.remoteFiles, emptyText: "Keine NAS-PDFs geladen")
@@ -68,10 +72,6 @@ struct SyncDashboardView: View {
             Text("Aktionen")
                 .font(.headline)
 
-            actionButton("Einstellungen öffnen", systemImage: "gearshape.fill") {
-                isSettingsPresented = true
-            }
-
             actionButton("NAS-Dateien anzeigen", systemImage: "externaldrive.fill.badge.icloud") {
                 Task { await viewModel.loadRemoteFiles() }
             }
@@ -94,6 +94,24 @@ struct SyncDashboardView: View {
         }
         .padding(14)
         .cardStyle()
+    }
+
+    private var settingsHeaderButton: some View {
+        HStack {
+            Spacer()
+            Button {
+                isSettingsPresented = true
+            } label: {
+                Label("Einstellungen", systemImage: "gearshape.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .foregroundStyle(.white)
+                    .background(Color(red: 0.14, green: 0.34, blue: 0.66), in: Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 4)
     }
 
     private var statusCard: some View {
