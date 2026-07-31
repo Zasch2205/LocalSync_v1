@@ -6,6 +6,8 @@ protocol NASClient {
     func listPDFs(connection: ConnectionConfig) async throws -> [SyncFile]
     func downloadFile(connection: ConnectionConfig, remoteFilename: String, to localURL: URL) async throws
     func uploadFile(connection: ConnectionConfig, localURL: URL, remoteFilename: String) async throws
+    func deleteFile(connection: ConnectionConfig, remoteFilename: String) async throws
+    func renameFile(connection: ConnectionConfig, from oldRemoteFilename: String, to newRemoteFilename: String) async throws
 }
 
 enum NASClientError: LocalizedError {

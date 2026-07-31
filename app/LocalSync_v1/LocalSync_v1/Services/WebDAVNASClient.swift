@@ -99,6 +99,29 @@ final class WebDAVNASClient: NASClient {
         try validate(response: response)
     }
 
+    func deleteFile(connection: ConnectionConfig, remoteFilename: String) async throws {
+        let fileURL = try buildRemoteFileURL(connection: connection, filename: remoteFilename)
+        var request = URLRequest(url: fileURL)
+        request.httpMethod = "DELETE"
+        applyBasicAuth(to: &request, connection: connection)
+
+        let (_, response) = try await session.data(for: request)
+        try validate(response: response)
+    }
+
+    func renameFile(connection: ConnectionConfig, from oldRemoteFilename: String, to newRemoteFilename: String) async throws {
+        let sourceURL = try buildRemoteFileURL(connection: connection, filename: oldRemoteFilename)
+        let destinationURL = try buildRemoteFileURL(connection: connection, filename: newRemoteFilename)
+        var request = URLRequest(url: sourceURL)
+        request.httpMethod = "MOVE"
+        request.setValue(destinationURL.absoluteString, forHTTPHeaderField: "Destination")
+        request.setValue("F", forHTTPHeaderField: "Overwrite")
+        applyBasicAuth(to: &request, connection: connection)
+
+        let (_, response) = try await session.data(for: request)
+        try validate(response: response)
+    }
+
     private func applyBasicAuth(to request: inout URLRequest, connection: ConnectionConfig) {
         guard !connection.username.isEmpty else { return }
         let credentials = "\(connection.username):\(connection.password)"

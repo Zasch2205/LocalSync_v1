@@ -5,6 +5,8 @@ struct SyncDashboardView: View {
     @StateObject private var viewModel: SyncViewModel
     @State private var isSettingsPresented = false
     @State private var selectedLocalPDFURL: URL?
+    @State private var renameTarget: FileRenameTarget?
+    @State private var renameInput = ""
 
     init(viewModel: SyncViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -63,6 +65,21 @@ struct SyncDashboardView: View {
                 if let url = selectedLocalPDFURL {
                     PDFPreviewView(fileURL: url)
                 }
+            }
+            .alert("Datei umbenennen", isPresented: Binding(
+                get: { renameTarget != nil },
+                set: { if !$0 { renameTarget = nil } }
+            )) {
+                TextField("Dateiname", text: $renameInput)
+                Button("Abbrechen", role: .cancel) {
+                    renameTarget = nil
+                }
+                Button("Speichern") {
+                    commitRename()
+                }
+                .disabled(renameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            } message: {
+                Text("Neuen Dateinamen eingeben")
             }
         }
     }
@@ -172,6 +189,15 @@ struct SyncDashboardView: View {
                                 .disabled(viewModel.isBusy || hasMissingSettings)
 
                                 Button {
+                                    beginRename(file: file, location: .local)
+                                } label: {
+                                    Image(systemName: "pencil")
+                                        .foregroundStyle(Color(red: 0.84, green: 0.91, blue: 1.0))
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(viewModel.isBusy)
+
+                                Button {
                                     Task { await viewModel.deleteSingleLocalFile(file) }
                                 } label: {
                                     Image(systemName: "trash.fill")
@@ -181,9 +207,38 @@ struct SyncDashboardView: View {
                                 .disabled(viewModel.isBusy)
                             }
                         } else {
-                            Text(file.filename)
-                                .lineLimit(1)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                            HStack(spacing: 8) {
+                                Text(file.filename)
+                                    .lineLimit(1)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                Button {
+                                    Task { await viewModel.downloadSingleRemoteFile(file) }
+                                } label: {
+                                    Image(systemName: "arrow.down.doc.fill")
+                                        .foregroundStyle(Color(red: 0.84, green: 0.91, blue: 1.0))
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(viewModel.isBusy || hasMissingSettings)
+
+                                Button {
+                                    beginRename(file: file, location: .remote)
+                                } label: {
+                                    Image(systemName: "pencil")
+                                        .foregroundStyle(Color(red: 0.84, green: 0.91, blue: 1.0))
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(viewModel.isBusy || hasMissingSettings)
+
+                                Button {
+                                    Task { await viewModel.deleteSingleRemoteFile(file) }
+                                } label: {
+                                    Image(systemName: "trash.fill")
+                                        .foregroundStyle(Color(red: 1.0, green: 0.63, blue: 0.63))
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(viewModel.isBusy || hasMissingSettings)
+                            }
                         }
 
                         Spacer()
@@ -218,6 +273,29 @@ struct SyncDashboardView: View {
         viewModel.connection.username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
         viewModel.connection.remotePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
+
+    private func beginRename(file: SyncFile, location: SyncFileLocation) {
+        renameInput = file.filename
+        renameTarget = FileRenameTarget(file: file, location: location)
+    }
+
+    private func commitRename() {
+        guard let target = renameTarget else { return }
+        let newFilename = renameInput
+        renameTarget = nil
+
+        switch target.location {
+        case .local:
+            Task { await viewModel.renameSingleLocalFile(target.file, to: newFilename) }
+        case .remote:
+            Task { await viewModel.renameSingleRemoteFile(target.file, to: newFilename) }
+        }
+    }
+}
+
+private struct FileRenameTarget {
+    let file: SyncFile
+    let location: SyncFileLocation
 }
 
 private extension View {

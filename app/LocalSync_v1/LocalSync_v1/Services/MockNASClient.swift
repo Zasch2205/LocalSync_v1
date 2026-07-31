@@ -22,4 +22,10 @@ final class MockNASClient: NASClient {
 
     func uploadFile(connection: ConnectionConfig, localURL: URL, remoteFilename: String) async throws {
     }
+
+    func deleteFile(connection: ConnectionConfig, remoteFilename: String) async throws {
+    }
+
+    func renameFile(connection: ConnectionConfig, from oldRemoteFilename: String, to newRemoteFilename: String) async throws {
+    }
 }

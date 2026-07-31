@@ -1,5 +1,16 @@
 import Foundation
 
+enum SyncServiceError: LocalizedError {
+    case emptyFilename
+
+    var errorDescription: String? {
+        switch self {
+        case .emptyFilename:
+            return "Bitte einen Dateinamen eingeben."
+        }
+    }
+}
+
 final class SyncService {
     private let nasClient: NASClient
     private let localFileStore: LocalFileStore
@@ -46,6 +57,27 @@ final class SyncService {
         try localFileStore.deleteLocalFile(filename: filename)
     }
 
+    func renameLocalFile(from oldFilename: String, to requestedFilename: String) throws -> String {
+        let resolvedName = try normalizeFilename(requestedFilename, fallbackFrom: oldFilename)
+        try localFileStore.renameLocalFile(from: oldFilename, to: resolvedName)
+        return resolvedName
+    }
+
+    func downloadSingleRemoteFile(remoteFile: SyncFile, connection: ConnectionConfig) async throws {
+        let targetURL = localFileStore.localURL(filename: remoteFile.filename)
+        try await nasClient.downloadFile(connection: connection, remoteFilename: remoteFile.filename, to: targetURL)
+    }
+
+    func deleteRemoteFile(filename: String, connection: ConnectionConfig) async throws {
+        try await nasClient.deleteFile(connection: connection, remoteFilename: filename)
+    }
+
+    func renameRemoteFile(from oldFilename: String, to requestedFilename: String, connection: ConnectionConfig) async throws -> String {
+        let resolvedName = try normalizeFilename(requestedFilename, fallbackFrom: oldFilename)
+        try await nasClient.renameFile(connection: connection, from: oldFilename, to: resolvedName)
+        return resolvedName
+    }
+
     private func resolveAvailableRemoteFilename(baseFilename: String, connection: ConnectionConfig) async throws -> String {
         let base = (baseFilename as NSString).deletingPathExtension
         let ext = (baseFilename as NSString).pathExtension
@@ -63,5 +95,19 @@ final class SyncService {
             }
             index += 1
         }
+    }
+
+    private func normalizeFilename(_ requestedFilename: String, fallbackFrom originalFilename: String) throws -> String {
+        let trimmed = requestedFilename.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw SyncServiceError.emptyFilename
+        }
+
+        let originalExtension = (originalFilename as NSString).pathExtension
+        let requestedExtension = (trimmed as NSString).pathExtension
+        if requestedExtension.isEmpty, !originalExtension.isEmpty {
+            return "\(trimmed).\(originalExtension)"
+        }
+        return trimmed
     }
 }

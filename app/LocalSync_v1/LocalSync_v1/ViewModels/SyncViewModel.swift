@@ -80,6 +80,7 @@ final class SyncViewModel: ObservableObject {
     func uploadSingleLocalFile(_ localFile: SyncFile) async {
         await runTask {
             let uploadedName = try await syncService.uploadWithIncrementedNameIfNeeded(localFile: localFile, connection: connection)
+            remoteFiles = try await syncService.fetchRemotePDFs(connection: connection)
             if uploadedName == localFile.filename {
                 lastMessage = "Datei hochgeladen: \(uploadedName)"
             } else {
@@ -93,6 +94,38 @@ final class SyncViewModel: ObservableObject {
             try syncService.deleteLocalFile(filename: localFile.filename)
             localFiles = try syncService.listLocalPDFs()
             lastMessage = "Lokal gelöscht: \(localFile.filename)"
+        }
+    }
+
+    func renameSingleLocalFile(_ localFile: SyncFile, to newFilename: String) async {
+        await runTask {
+            let renamed = try syncService.renameLocalFile(from: localFile.filename, to: newFilename)
+            localFiles = try syncService.listLocalPDFs()
+            lastMessage = "Lokal umbenannt: \(localFile.filename) → \(renamed)"
+        }
+    }
+
+    func downloadSingleRemoteFile(_ remoteFile: SyncFile) async {
+        await runTask {
+            try await syncService.downloadSingleRemoteFile(remoteFile: remoteFile, connection: connection)
+            localFiles = try syncService.listLocalPDFs()
+            lastMessage = "Auf iPhone/iPad geladen: \(remoteFile.filename)"
+        }
+    }
+
+    func deleteSingleRemoteFile(_ remoteFile: SyncFile) async {
+        await runTask {
+            try await syncService.deleteRemoteFile(filename: remoteFile.filename, connection: connection)
+            remoteFiles = try await syncService.fetchRemotePDFs(connection: connection)
+            lastMessage = "NAS gelöscht: \(remoteFile.filename)"
+        }
+    }
+
+    func renameSingleRemoteFile(_ remoteFile: SyncFile, to newFilename: String) async {
+        await runTask {
+            let renamed = try await syncService.renameRemoteFile(from: remoteFile.filename, to: newFilename, connection: connection)
+            remoteFiles = try await syncService.fetchRemotePDFs(connection: connection)
+            lastMessage = "NAS umbenannt: \(remoteFile.filename) → \(renamed)"
         }
     }
 
