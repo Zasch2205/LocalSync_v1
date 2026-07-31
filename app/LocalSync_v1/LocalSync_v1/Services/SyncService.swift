@@ -33,8 +33,14 @@ final class SyncService {
     }
 
     func download(remoteFile: SyncFile, connection: ConnectionConfig) async throws {
-        let targetURL = localFileStore.localURL(filename: remoteFile.filename)
+        _ = try await downloadWithIncrementedNameIfNeeded(remoteFile: remoteFile, connection: connection)
+    }
+
+    func downloadWithIncrementedNameIfNeeded(remoteFile: SyncFile, connection: ConnectionConfig) async throws -> String {
+        let resolvedName = resolveAvailableLocalFilename(baseFilename: remoteFile.filename)
+        let targetURL = localFileStore.localURL(filename: resolvedName)
         try await nasClient.downloadFile(connection: connection, remoteFilename: remoteFile.filename, to: targetURL)
+        return resolvedName
     }
 
     func upload(localFile: SyncFile, connection: ConnectionConfig) async throws {
@@ -63,9 +69,8 @@ final class SyncService {
         return resolvedName
     }
 
-    func downloadSingleRemoteFile(remoteFile: SyncFile, connection: ConnectionConfig) async throws {
-        let targetURL = localFileStore.localURL(filename: remoteFile.filename)
-        try await nasClient.downloadFile(connection: connection, remoteFilename: remoteFile.filename, to: targetURL)
+    func downloadSingleRemoteFile(remoteFile: SyncFile, connection: ConnectionConfig) async throws -> String {
+        try await downloadWithIncrementedNameIfNeeded(remoteFile: remoteFile, connection: connection)
     }
 
     func deleteRemoteFile(filename: String, connection: ConnectionConfig) async throws {
@@ -109,5 +114,24 @@ final class SyncService {
             return "\(trimmed).\(originalExtension)"
         }
         return trimmed
+    }
+
+    private func resolveAvailableLocalFilename(baseFilename: String) -> String {
+        if !localFileStore.fileExists(filename: baseFilename) {
+            return baseFilename
+        }
+
+        let base = (baseFilename as NSString).deletingPathExtension
+        let ext = (baseFilename as NSString).pathExtension
+
+        var index = 1
+        while true {
+            let candidateBase = "\(base)_\(index)"
+            let candidate = ext.isEmpty ? candidateBase : "\(candidateBase).\(ext)"
+            if !localFileStore.fileExists(filename: candidate) {
+                return candidate
+            }
+            index += 1
+        }
     }
 }

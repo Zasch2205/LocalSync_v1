@@ -107,9 +107,13 @@ final class SyncViewModel: ObservableObject {
 
     func downloadSingleRemoteFile(_ remoteFile: SyncFile) async {
         await runTask {
-            try await syncService.downloadSingleRemoteFile(remoteFile: remoteFile, connection: connection)
+            let downloadedName = try await syncService.downloadSingleRemoteFile(remoteFile: remoteFile, connection: connection)
             localFiles = try syncService.listLocalPDFs()
-            lastMessage = "Auf iPhone/iPad geladen: \(remoteFile.filename)"
+            if downloadedName == remoteFile.filename {
+                lastMessage = "Auf iPhone/iPad geladen: \(downloadedName)"
+            } else {
+                lastMessage = "Auf iPhone/iPad geladen als: \(downloadedName)"
+            }
         }
     }
 

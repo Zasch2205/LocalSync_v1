@@ -96,4 +96,9 @@ final class LocalFileStore {
         }
         try fileManager.moveItem(at: sourceURL, to: destinationURL)
     }
+
+    func fileExists(filename: String) -> Bool {
+        let fileURL = localURL(filename: filename)
+        return fileManager.fileExists(atPath: fileURL.path)
+    }
 }
